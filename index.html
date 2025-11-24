@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crossing the GenAI Chasm - MIT Research Findings</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,400;12..96,700&family=Instrument+Serif:ital@0;1&display=swap');
+
+        :root {
+            --primary: #0a0e27;
+            --accent: #ff6b35;
+            --highlight: #f7931e;
+            --success: #00d084;
+            --danger: #ff4458;
+            --light: #f8f9fa;
+            --muted: #6c757d;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            background: var(--primary);
+            color: var(--light);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .presentation {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            background: var(--primary);
+        }
+
+        .slide.active {
+            display: flex;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Title Slide */
+        .title-slide {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-slide::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 1s ease-out;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--light);
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 400;
+            color: var(--highlight);
+            margin-bottom: 30px;
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px;
+            backdrop-filter: blur(10px);
+            transform: translateY(30px);
+            opacity: 0;
+            animation: slideUp 0.8s ease-out forwards;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .stats-grid-2x2 .stat-card {
+            margin: 0;
+            min-height: 250px;
+        }
+
+        .grid-3col .stat-card {
+            margin: 0;
+            min-height: 220px;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-1);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .stat-number {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--highlight) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+
+        .stat-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .stats-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 30px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-3col {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid-2x2 {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+            .grid-3col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .myths-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .myths-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .myths-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .myth-card {
+            background: linear-gradient(135deg, rgba(255, 68, 88, 0.1) 0%, rgba(255, 68, 88, 0.05) 100%);
+            border: 1px solid rgba(255, 68, 88, 0.3);
+            border-radius: 15px;
+            padding: 25px 20px;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .myth-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(255, 68, 88, 0.2);
+        }
+
+        .myth-number {
+            position: absolute;
+            top: -15px;
+            left: 30px;
+            background: var(--danger);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .myth-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--light);
+            line-height: 1.3;
+        }
+
+        .myth-truth {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        .idea-card {
+            background: linear-gradient(135deg, rgba(0, 208, 132, 0.1) 0%, rgba(0, 208, 132, 0.05) 100%);
+            border-left: 4px solid var(--success);
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateX(-30px);
+            animation: slideInLeft 0.6s ease-out forwards;
+        }
+
+        .idea-card:nth-child(1) { animation-delay: 0.1s; }
+        .idea-card:nth-child(2) { animation-delay: 0.2s; }
+        .idea-card:nth-child(3) { animation-delay: 0.3s; }
+        .idea-card:nth-child(4) { animation-delay: 0.4s; }
+        .idea-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .idea-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+
+        .idea-content {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .quote-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px auto;
+            max-width: 900px;
+            position: relative;
+        }
+
+        .quote-card::before {
+            content: '"';
+            position: absolute;
+            top: -20px;
+            left: 30px;
+            font-size: 100px;
+            color: var(--accent);
+            opacity: 0.3;
+            font-family: 'Instrument Serif', serif;
+        }
+
+        .quote-text {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .quote-author {
+            font-size: 1rem;
+            color: var(--highlight);
+            text-align: right;
+        }
+
+        .shadow-paradox {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            width: 100%;
+            max-width: 1200px;
+            align-items: center;
+        }
+
+        .paradox-side {
+            text-align: center;
+            padding: 30px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .personal-side {
+            background: linear-gradient(135deg, rgba(0, 208, 132, 0.1) 0%, rgba(0, 208, 132, 0.05) 100%);
+            border: 2px solid var(--success);
+        }
+
+        .enterprise-side {
+            background: linear-gradient(135deg, rgba(255, 68, 88, 0.1) 0%, rgba(255, 68, 88, 0.05) 100%);
+            border: 2px solid var(--danger);
+        }
+
+        .paradox-percentage {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .personal-side .paradox-percentage {
+            background: linear-gradient(135deg, #00d084 0%, #00ff88 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .enterprise-side .paradox-percentage {
+            background: linear-gradient(135deg, #ff4458 0%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .slide-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 30px;
+            border-radius: 5px;
+            background: var(--accent);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes expandWidth {
+            from {
+                width: 0;
+            }
+        }
+
+        .progress-bar {
+            animation: expandWidth 1s ease-out forwards;
+        }
+
+        .winner-framework {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+            border: 2px solid #ffc107;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .winner-item {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .winner-item:nth-child(1) { animation-delay: 0.1s; }
+        .winner-item:nth-child(2) { animation-delay: 0.2s; }
+        .winner-item:nth-child(3) { animation-delay: 0.3s; }
+
+        .winner-icon {
+            width: 40px;
+            height: 40px;
+            background: #ffc107;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .winner-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Segment Divider Styles */
+        .segment-divider {
+            background: radial-gradient(ellipse at center, rgba(255, 107, 53, 0.15) 0%, transparent 70%);
+        }
+
+        .segment-divider h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+        }
+
+        .segment-number {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            border: 3px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 0 auto 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide title-slide active">
+            <h1>Crossing the GenAI Chasm</h1>
+            <p class="subtitle">MIT Research Findings on Enterprise AI Implementation</p>
+            <p class="subtitle" style="font-size: 1.2rem; margin-top: 40px; color: var(--highlight);">
+                November 25, 2025 • Microsoft Vancouver
+            </p>
+        </div>
+
+        <!-- Slide 2: High-Level Findings -->
+        <div class="slide">
+            <h2>The $40 Billion Reality Check</h2>
+            <div class="stats-grid-2x2">
+                <div class="stat-card" style="animation-delay: 0.1s;">
+                    <div class="stat-number">$30-40B</div>
+                    <div class="stat-label">Enterprise GenAI Investment</div>
+                    <div class="stat-description">Massive capital allocation with minimal returns</div>
+                </div>
+                <div class="stat-card" style="animation-delay: 0.2s;">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Zero Return Rate</div>
+                    <div class="stat-description">Organizations seeing no meaningful ROI</div>
+                </div>
+                <div class="stat-card" style="animation-delay: 0.3s;">
+                    <div class="stat-number">5%</div>
+                    <div class="stat-label">Production Success</div>
+                    <div class="stat-description">Custom enterprise tools reaching production</div>
+                </div>
+                <div class="stat-card" style="animation-delay: 0.4s;">
+                    <div class="stat-number">2 of 8</div>
+                    <div class="stat-label">Sectors Transformed</div>
+                    <div class="stat-description">Only two sectors showing structural changes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Myths -->
+        <div class="slide">
+            <h2>Debunking the Myths</h2>
+            <div class="myths-grid">
+                <div class="myth-card">
+                    <div class="myth-number">1</div>
+                    <div class="myth-title">AI Will Replace Most Jobs</div>
+                    <div class="myth-truth">Reality: Limited layoffs from GenAI, only in already AI-affected industries. No consensus on hiring levels next 3-5 years</div>
+                </div>
+                <div class="myth-card">
+                    <div class="myth-number">2</div>
+                    <div class="myth-title">GenAI is Transforming Business</div>
+                    <div class="myth-truth">Reality: Adoption is high, but transformation is rare. Only 5% have tools at scale, 2 of 8 sectors show structural change</div>
+                </div>
+                <div class="myth-card">
+                    <div class="myth-number">3</div>
+                    <div class="myth-title">Enterprises Are Slow Adopters</div>
+                    <div class="myth-truth">Reality: Extremely eager to adopt - 90% have seriously explored buying an AI solution</div>
+                </div>
+                <div class="myth-card">
+                    <div class="myth-number">4</div>
+                    <div class="myth-title">Model Quality, Legal, Data, Risk Hold Back AI</div>
+                    <div class="myth-truth">Reality: What's really holding it back - tools don't learn and don't integrate into workflows</div>
+                </div>
+                <div class="myth-card">
+                    <div class="myth-number">5</div>
+                    <div class="myth-title">Best Enterprises Build Their Own</div>
+                    <div class="myth-truth">Reality: Internal builds fail twice as often as external partnerships</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Where the Divide Shows Up -->
+        <div class="slide">
+            <h2>Where the Divide Shows Up</h2>
+            <p style="font-size: 1.3rem; color: rgba(255,255,255,0.7); margin-bottom: 50px; text-align: center;">
+                "Would you assign this tool to AI or a junior colleague?"
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 60px; max-width: 1000px; margin: 0 auto;">
+                <div style="text-align: center;">
+                    <h3 style="color: #4facfe; margin-bottom: 30px;">Quick Tasks</h3>
+                    <p style="color: rgba(255,255,255,0.6); margin-bottom: 25px; font-size: 0.95rem;">(emails, summaries, basic analysis)</p>
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="width: 80px; text-align: right; margin-right: 20px;">AI</span>
+                            <div style="flex: 1; height: 40px; background: rgba(255,255,255,0.1); border-radius: 5px; position: relative;">
+                                <div style="width: 70%; height: 100%; background: #4facfe; border-radius: 5px; animation: expandWidth 1s ease-out;"></div>
+                            </div>
+                            <span style="width: 60px; text-align: left; margin-left: 20px; font-size: 1.8rem; font-weight: 700; color: #4facfe;">70%</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="width: 80px; text-align: right; margin-right: 20px;">Human</span>
+                            <div style="flex: 1; height: 40px; background: rgba(255,255,255,0.1); border-radius: 5px; position: relative;">
+                                <div style="width: 30%; height: 100%; background: #00f2fe; border-radius: 5px; animation: expandWidth 1s ease-out;"></div>
+                            </div>
+                            <span style="width: 60px; text-align: left; margin-left: 20px; font-size: 1.8rem; font-weight: 700; color: #00f2fe;">30%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <h3 style="color: var(--danger); margin-bottom: 30px;">Complex Projects</h3>
+                    <p style="color: rgba(255,255,255,0.6); margin-bottom: 25px; font-size: 0.95rem;">(multi-week work, client management)</p>
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="width: 80px; text-align: right; margin-right: 20px;">AI</span>
+                            <div style="flex: 1; height: 40px; background: rgba(255,255,255,0.1); border-radius: 5px; position: relative;">
+                                <div style="width: 10%; height: 100%; background: var(--danger); border-radius: 5px; animation: expandWidth 1s ease-out;"></div>
+                            </div>
+                            <span style="width: 60px; text-align: left; margin-left: 20px; font-size: 1.8rem; font-weight: 700; color: var(--danger);">10%</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="width: 80px; text-align: right; margin-right: 20px;">Human</span>
+                            <div style="flex: 1; height: 40px; background: rgba(255,255,255,0.1); border-radius: 5px; position: relative;">
+                                <div style="width: 90%; height: 100%; background: var(--success); border-radius: 5px; animation: expandWidth 1s ease-out;"></div>
+                            </div>
+                            <span style="width: 60px; text-align: left; margin-left: 20px; font-size: 1.8rem; font-weight: 700; color: var(--success);">90%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+                        border-left: 4px solid var(--highlight); padding: 25px; margin-top: 50px; border-radius: 10px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                <p style="color: var(--highlight); font-weight: 700; margin-bottom: 10px;">Key Finding</p>
+                <p style="color: rgba(255,255,255,0.8);">
+                    For simple work, AI wins (70% preference). For complex work, humans dominate by 9-to-1 margins.
+                    The dividing line: <strong>memory, adaptability, and learning capability</strong>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 5: The Divide -->
+        <div class="slide">
+            <h2>The 95% vs 5% Divide</h2>
+            <div style="text-align: center; max-width: 1000px; margin: 0 auto;">
+                <div style="display: flex; gap: 60px; justify-content: center; align-items: center; margin: 40px 0;">
+                    <div style="flex: 1;">
+                        <div class="stat-number" style="color: var(--danger); font-size: 5rem;">95%</div>
+                        <h3 style="color: var(--danger); margin-bottom: 20px;">FAILURE PATTERNS</h3>
+                        <p style="color: rgba(255,255,255,0.7); line-height: 1.8;">
+                            Generic tools • Central AI labs • Model benchmarks •
+                            Horizontal solutions • Static systems • Pilot purgatory
+                        </p>
+                    </div>
+                    <div style="width: 2px; height: 200px; background: linear-gradient(to bottom, transparent, var(--accent), transparent);"></div>
+                    <div style="flex: 1;">
+                        <div class="stat-number" style="color: var(--success); font-size: 5rem;">5%</div>
+                        <h3 style="color: var(--success); margin-bottom: 20px;">SUCCESS PATTERNS</h3>
+                        <p style="color: rgba(255,255,255,0.7); line-height: 1.8;">
+                            Deep integration • Frontline leadership • Business metrics •
+                            Narrow workflows • Adaptive systems • Production value
+                        </p>
+                    </div>
+                </div>
+                <p style="color: var(--highlight); font-size: 1.3rem; margin-top: 40px;">
+                    We explore these patterns across three dimensions...
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Segment 1 Divider -->
+        <div class="slide segment-divider">
+            <div style="text-align: center;">
+                <div class="segment-number">1</div>
+                <p style="color: var(--highlight); font-size: 1.2rem; margin-bottom: 30px;">SEGMENT 1</p>
+                <h1 style="font-size: 3.5rem; margin-bottom: 40px;">The Selection Problem</h1>
+                <p class="subtitle">Building Project Selection Framework</p>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 30px; font-size: 1.1rem;">MIT research reveals what separates the 5% winners from the 95% who fail</p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Right Problems to Solve -->
+        <div class="slide">
+            <h2>Making the Right GenAI Bets</h2>
+            <div style="max-width: 900px;">
+                <div class="idea-card">
+                    <div class="idea-title">Investment Bias Reality Check</div>
+                    <div class="idea-content">50% of budgets go to sales & marketing, but back-office yields better ROI</div>
+                </div>
+                <div class="idea-card">
+                    <div class="idea-title">The Measurement Trap</div>
+                    <div class="idea-content">Easily measured, highly visible outcomes get unnecessary attention</div>
+                </div>
+                <div class="idea-card">
+                    <div class="idea-title">Deep Integration Wins</div>
+                    <div class="idea-content">BPO-style embedded solutions succeed; light-touch SaaS tools fail</div>
+                </div>
+                <div class="idea-card">
+                    <div class="idea-title">Narrow Focus with Domain Fluency</div>
+                    <div class="idea-content">Winners target narrow but high-value use cases. Domain expertise and continuous learning beat broad features and flashy UX</div>
+                </div>
+                <div class="idea-card">
+                    <div class="idea-title">Edge-to-Core Strategy</div>
+                    <div class="idea-content">Successful implementations start with non-critical processes, prove value, then scale to core workflows</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Segment 2 Divider -->
+        <div class="slide segment-divider">
+            <div style="text-align: center;">
+                <div class="segment-number">2</div>
+                <p style="color: var(--highlight); font-size: 1.2rem; margin-bottom: 30px;">SEGMENT 2</p>
+                <h1 style="font-size: 3.5rem; margin-bottom: 40px;">The Human Factor</h1>
+                <p class="subtitle">Discovering Organizational Success Patterns</p>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 30px; font-size: 1.1rem;">MIT's analysis of organizational patterns in the successful 5%</p>
+            </div>
+        </div>
+
+        <!-- Slide 9: Organizational Dynamics -->
+        <div class="slide">
+            <h2>Organizational Success Patterns</h2>
+            <div class="grid-3col">
+                <div class="stat-card">
+                    <h3>Scale Paradox</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Big firms lead in pilots but lag in scale-up execution</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Buy Beats Build (2:1)</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Strategic partnerships twice as likely to succeed as internal builds</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Deep vs Light Touch</h3>
+                    <p style="color: rgba(255,255,255,0.8);">BPO-style embedded partners win; SaaS vendors fail</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Frontline-Led Innovation</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Source from frontline managers, not central AI labs. Distributed experimentation, no approval bottlenecks</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Business Metrics Focus</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Winners measure business impact, not model benchmarks. Hold vendors to real outcomes</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Prosumer + Executive</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Bottom-up prosumers paired with top-down executive accountability</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Segment 3 Divider -->
+        <div class="slide segment-divider">
+            <div style="text-align: center;">
+                <div class="segment-number">3</div>
+                <p style="color: var(--highlight); font-size: 1.2rem; margin-bottom: 30px;">SEGMENT 3</p>
+                <h1 style="font-size: 3.5rem; margin-bottom: 40px;">The Solution Blueprint</h1>
+                <p class="subtitle">Defining Design Principles</p>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 30px; font-size: 1.1rem;">MIT findings on why adaptive systems beat static tools</p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Shadow AI Paradox -->
+        <div class="slide">
+            <h2>The Shadow AI Paradox</h2>
+            <div class="shadow-paradox">
+                <div class="paradox-side personal-side">
+                    <h3>Personal AI Tools</h3>
+                    <div class="paradox-percentage">90%</div>
+                    <p style="font-size: 1.2rem; margin-bottom: 10px;">Workers using shadow AI</p>
+                    <p style="font-size: 1.1rem; color: var(--success);">ChatGPT, Claude, Copilot</p>
+                    <p style="margin-top: 20px; color: rgba(255,255,255,0.7);">
+                        Flexible interfaces<br>
+                        User-controlled iteration<br>
+                        Immediate responsiveness
+                    </p>
+                </div>
+                <div class="paradox-side enterprise-side">
+                    <h3>Enterprise AI Tools</h3>
+                    <div class="paradox-percentage">5%</div>
+                    <p style="font-size: 1.2rem; margin-bottom: 10px;">Tools reaching production</p>
+                    <p style="font-size: 1.1rem; color: var(--danger);">95% fail to scale</p>
+                    <p style="margin-top: 20px; color: rgba(255,255,255,0.7);">
+                        Static systems<br>
+                        No learning capability<br>
+                        Limited customization
+                    </p>
+                </div>
+            </div>
+            <div style="margin-top: 40px; text-align: center;">
+                <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+                            border-left: 4px solid var(--highlight); padding: 25px; border-radius: 10px; max-width: 900px; margin: 0 auto;">
+                    <p style="color: var(--highlight); font-weight: 700; margin-bottom: 10px; font-size: 1.2rem;">The Fundamental Learning Gap</p>
+                    <p style="color: rgba(255,255,255,0.8); line-height: 1.6;">
+                        This feedback points to the fundamental learning gap that keeps organizations on the wrong side
+                        of the GenAI Divide. Users appreciate the flexibility and responsiveness of consumer LLM interfaces
+                        but require the <strong>persistence and contextual awareness</strong> that current tools cannot provide.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Adaptive Systems -->
+        <div class="slide">
+            <h2>The Learning & Memory Gap</h2>
+
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; margin-bottom: 30px;">
+                    <h3 style="color: var(--highlight); margin-bottom: 25px; text-align: center;">Why Generic Tools Win, and Lose</h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                        <div>
+                            <p style="color: var(--danger); font-weight: 700; margin-bottom: 15px;">Enterprise Tool Problems:</p>
+                            <p style="font-style: italic; color: rgba(255,255,255,0.8); line-height: 1.6;">
+                                "Our purchased AI tool provided rigid summaries with limited customization.
+                                With ChatGPT, I can guide the conversation and iterate until I get exactly what I need."
+                            </p>
+                        </div>
+
+                        <div>
+                            <p style="color: #4facfe; font-weight: 700; margin-bottom: 15px;">But ChatGPT Also Falls Short:</p>
+                            <p style="font-style: italic; color: rgba(255,255,255,0.8); line-height: 1.6;">
+                                "It doesn't retain knowledge of client preferences or learn from previous edits.
+                                For high-stakes work, I need a system that accumulates knowledge and improves over time."
+                            </p>
+                        </div>
+                    </div>
+                    <p style="text-align: right; color: var(--highlight); margin-top: 15px; font-size: 0.9rem;">— Corporate Lawyer</p>
+                </div>
+
+                <h3 style="color: var(--highlight); margin-bottom: 25px; text-align: center;">The Learning Gap That Defines the Divide</h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                    <div>
+                        <h4 style="color: rgba(255,255,255,0.7); margin-bottom: 20px; font-size: 1.1rem;">
+                            Barriers to Core Workflow Integration
+                        </h4>
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">"It doesn't learn from our feedback"</span>
+                                <span style="font-size: 1.1rem; font-weight: 700; color: var(--danger);">68%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 68%; height: 100%; background: var(--danger); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">"Too much manual context required each time"</span>
+                                <span style="font-size: 1.1rem; font-weight: 700; color: var(--accent);">63%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 63%; height: 100%; background: var(--accent); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">"Can't customize it to our specific workflows"</span>
+                                <span style="font-size: 1.1rem; font-weight: 700; color: var(--highlight);">58%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 58%; height: 100%; background: var(--highlight); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">"Breaks in edge cases and doesn't adapt"</span>
+                                <span style="font-size: 1.1rem; font-weight: 700; color: #4facfe;">50%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 50%; height: 100%; background: #4facfe; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+                                    border-left: 4px solid var(--highlight); padding: 25px; border-radius: 10px;">
+                            <p style="color: var(--highlight); font-weight: 700; margin-bottom: 10px;">The Gap:</p>
+                            <p style="color: rgba(255,255,255,0.8); line-height: 1.6;">
+                                Users need tools with consumer LLM flexibility AND enterprise memory/learning capabilities.
+                                Neither current option delivers both.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Workforce Impacts -->
+        <div class="slide">
+            <h2>Workforce Transformation</h2>
+            <div class="stats-grid-2x2">
+                <div class="stat-card">
+                    <h3 style="color: var(--success);">✓ No Mass Layoffs</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Most winners don't see workforce reduction</p>
+                </div>
+                <div class="stat-card">
+                    <h3 style="color: var(--highlight);">Selective Impact</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Customer support, software engineering, admin functions</p>
+                </div>
+                <div class="stat-card">
+                    <h3 style="color: var(--success);">Cost Optimization</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Reduced BPO spending and external agency use</p>
+                </div>
+                <div class="stat-card">
+                    <h3 style="color: var(--success);">Revenue Growth</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Improved retention via intelligent follow-up</p>
+                </div>
+            </div>
+            <div class="quote-card" style="margin-top: 40px;">
+                <p class="quote-text">
+                    "Our hiring strategy prioritizes candidates who demonstrate AI tool proficiency.
+                    Recent graduates often exceed experienced professionals in this capability."
+                </p>
+                <p class="quote-author">— VP of Operations, MidMarket Manufacturing</p>
+            </div>
+        </div>
+
+        <!-- Slide 14: Call to Action -->
+        <div class="slide title-slide">
+            <h1>Let's Build Our Playbook</h1>
+            <p class="subtitle" style="font-size: 1.5rem; margin-bottom: 50px;">Three Discussions to Bridge the Divide</p>
+
+            <div style="max-width: 1000px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 50px;">
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; text-align: center;">
+                        <div class="segment-number" style="margin: 0 auto 20px;">1</div>
+                        <h3 style="color: var(--accent); margin-bottom: 15px;">The Selection Problem</h3>
+                        <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem;">Building our project selection framework</p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; text-align: center;">
+                        <div class="segment-number" style="margin: 0 auto 20px;">2</div>
+                        <h3 style="color: var(--highlight); margin-bottom: 15px;">The Human Factor</h3>
+                        <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem;">Discovering organizational success patterns</p>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; text-align: center;">
+                        <div class="segment-number" style="margin: 0 auto 20px;">3</div>
+                        <h3 style="color: var(--success); margin-bottom: 15px;">The Solution Blueprint</h3>
+                        <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem;">Defining our design principles</p>
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+                            border: 2px solid var(--highlight); border-radius: 20px; padding: 30px; text-align: center;">
+                    <p style="color: var(--highlight); font-size: 1.3rem; font-weight: 700; margin-bottom: 10px;">
+                        Our Goal Tonight
+                    </p>
+                    <p style="color: rgba(255,255,255,0.9); font-size: 1.1rem; line-height: 1.6;">
+                        Create a practical playbook combining MIT findings, expert insights, and your real-world experiences
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" onclick="previousSlide()">Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next</button>
+    </div>
+
+    <div class="slide-indicator">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+
+        function showSlide(n) {
+            // Hide current slide
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+
+            // Update slide index
+            currentSlide = (n + slides.length) % slides.length;
+
+            // Show new slide
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            } else if (e.key >= '0' && e.key <= '9') {
+                const slideNum = parseInt(e.key) - 1;
+                if (slideNum >= 0 && slideNum < slides.length) {
+                    showSlide(slideNum);
+                }
+            }
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide();
+            }
+            if (touchEndX > touchStartX + 50) {
+                previousSlide();
+            }
+        }
+
+        // Initialize first slide
+        slides[0].classList.add('active');
+    </script>
+</body>
+</html>
